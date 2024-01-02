@@ -1,0 +1,15 @@
+{
+	"manifest_version": 3,
+	"name": "ICAL",
+	"version": "1.0",
+    "permissions": ["activeTab", "scripting"],
+	"content_scripts": [
+		{
+			"matches": ["*://*.w2prod.sis.yorku.ca/*"],
+			"js": ["script.js"]
+		}
+	],
+	"action": {
+		"default_popup": "index.html"
+	}
+}
