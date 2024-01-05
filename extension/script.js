@@ -115,7 +115,7 @@ function extractCourseData(textContent, time, rowspan, term, year, count) {
 }
 
 function getResults() {
-    const apiUrl = 'https://kkva0zcnoh.execute-api.us-east-1.amazonaws.com/Prod/convert';
+    const apiUrl = 'https://2m1tfn7a0b.execute-api.us-east-1.amazonaws.com/prod/convert';
     let fall = parseSchedule('F');
     let winter = parseSchedule('W');
     fall = JSON.stringify(fall);
@@ -140,14 +140,11 @@ function getResults() {
         return response.json();
     })
     .then(data => {
-        console.log('Success:', data);
+        window.open(data.fall, '_blank');
+        window.open(data.winter, '_blank');
     })
     .catch(error => {
         console.error('Error:', error);
     });
 }   
-/*
-
-    
-*/
 getResults();
