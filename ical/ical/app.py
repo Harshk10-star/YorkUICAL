@@ -13,19 +13,16 @@ def lambda_handler(event, context):
     tz = pytz.timezone('America/Toronto')
     
     icals = []
-    body = ''
-    if isinstance(event["body"], str):
-        body = json.loads(event["body"])
-    else:
-        body = event["body"]
+    body = json.loads(event['body'])
     print(body)
     for semester in semesters:
         cal = Calendar()
         cal.add('prodid', '-//My course schedule//example.com//')
         cal.add('version', '2.0')
-        courses = body.get(semester)
+        courses = json.loads(body[semester])
 
         for course in courses:
+            course = json.loads(course)
             event_period = Event()
             event_period.add('summary', course['course'])
             event_period.add('location', course['location'])
@@ -51,19 +48,33 @@ def lambda_handler(event, context):
             cal.add_component(event_period)
     
         # Convert the iCalendar data to a string
-        icals.append(cal.to_ical().decode('utf-8'))
-
+        icals.append((cal.to_ical(), semester))
+    filenames = []
     # Put the iCalendar data into the S3 bucket
-    for i, ical in enumerate(icals):
+    for ical, sem in icals:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = f"ical_{semesters[i]}_{timestamp}.ics"
+        filename = f"ical_{sem}_{timestamp}.ics"
+        filenames.append((filename, sem))
         s3.put_object(Body=ical, Bucket='ical-yorku-bucket', Key=filename)
+    newBody = {}
 
-    
+    for filename, sem in filenames:
+        url = s3.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": 'ical-yorku-bucket',
+                "Key": filename
+            },
+            ExpiresIn=3600,
+        )
+        newBody[sem] = url
+
     return {
         "statusCode": 200,
-        "body": {
-            "fall_ical": icals[0],
-            "winter_ical": icals[1]
+        "body": json.dumps(newBody),
+        "headers": {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'OPTIONS, POST'
         }
     }
